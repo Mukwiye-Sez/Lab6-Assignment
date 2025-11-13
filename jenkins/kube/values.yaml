@@ -1,0 +1,26 @@
+controller:
+  admin:
+    # Use the existing secret you already created
+    existingSecret: jenkins-admin
+    userKey: user
+    passwordKey: password
+
+  # Use the chart's built-in JCasC, which will:
+  # - create that admin user
+  # - require login
+  JCasC:
+    defaultConfig: true
+
+  installPlugins:
+    - kubernetes
+    - workflow-aggregator
+    - git
+    - github
+    - docker-workflow
+    - credentials-binding
+    - blueocean
+    - configuration-as-code
+    - configuration-as-code-groovy
+
+persistence:
+  enabled: false
