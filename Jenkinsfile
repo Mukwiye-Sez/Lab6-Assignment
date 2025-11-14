@@ -1,23 +1,41 @@
 pipeline {
-  agent any
+    agent any
 
-  stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
+        IMAGE_NAME = "mukkri5/lab6-app"
     }
 
-    stage('Build') {
-      steps {
-        echo 'Build step placeholder'
-      }
-    }
+    stages {
 
-    stage('Test') {
-      steps {
-        echo 'Test step placeholder'
-      }
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/Mukwiye-Sez/Lab6-Assignment.git'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh """
+                docker build -t ${IMAGE_NAME}:${BUILD_NUMBER} .
+                """
+            }
+        }
+
+        stage('Login to Docker Hub') {
+            steps {
+                sh """
+                echo "${DOCKERHUB_CREDENTIALS_PSW}" | docker login -u "${DOCKERHUB_CREDENTIALS_USR}" --password-stdin
+                """
+            }
+        }
+
+        stage('Push Image') {
+            steps {
+                sh """
+                docker push ${IMAGE_NAME}:${BUILD_NUMBER}
+                """
+            }
+        }
     }
-  }
 }
