@@ -8,12 +8,6 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
-            steps {
-                git 'https://github.com/Mukwiye-Sez/Lab6-Assignment.git'
-            }
-        }
-
         stage('Build Docker Image') {
             steps {
                 sh """
@@ -39,3 +33,4 @@ pipeline {
         }
     }
 }
+
