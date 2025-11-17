@@ -13,8 +13,7 @@ spec:
   containers:
     - name: docker
       image: docker:27.1.2-cli
-      command:
-        - cat
+      command: ["cat"]
       tty: true
       volumeMounts:
         - name: docker-sock
@@ -61,10 +60,7 @@ spec:
         stage('Build Docker Image') {
             steps {
                 container('docker') {
-                    sh """
-                      docker version
-                      docker build -t ${DOCKER_IMAGE} .
-                    """
+                    sh "docker build -t ${DOCKER_IMAGE} ."
                 }
             }
         }
@@ -72,9 +68,7 @@ spec:
         stage('Test') {
             steps {
                 container('docker') {
-                    sh """
-                      docker run --rm ${DOCKER_IMAGE} pytest -q
-                    """
+                    sh "docker run --rm ${DOCKER_IMAGE} pytest -q"
                 }
             }
         }
@@ -82,9 +76,7 @@ spec:
         stage('Static Analysis') {
             steps {
                 container('docker') {
-                    sh """
-                      docker run --rm ${DOCKER_IMAGE} flake8 app.py
-                    """
+                    sh "docker run --rm ${DOCKER_IMAGE} flake8 app.py"
                 }
             }
         }
@@ -108,9 +100,7 @@ spec:
         stage('Push Image') {
             steps {
                 container('docker') {
-                    sh """
-                      docker push ${DOCKER_IMAGE}
-                    """
+                    sh "docker push ${DOCKER_IMAGE}"
                 }
             }
         }
