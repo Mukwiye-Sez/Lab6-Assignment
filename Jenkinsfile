@@ -47,6 +47,7 @@ spec:
 
     environment {
         DOCKER_IMAGE = "mukkris/lab6-app:${BUILD_NUMBER}"
+        DOCKER_IMAGE_LATEST = "mukkris/lab6-app:latest"
     }
 
     stages {
@@ -60,8 +61,10 @@ spec:
         stage('Build Docker Image') {
             steps {
                 container('docker') {
-                    sh "docker build -t ${DOCKER_IMAGE} ."
-                }
+            sh """
+              docker build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .
+            """
+               }
             }
         }
 
@@ -100,8 +103,11 @@ spec:
         stage('Push Image') {
             steps {
                 container('docker') {
-                    sh "docker push ${DOCKER_IMAGE}"
-                }
+            sh """
+              docker push ${DOCKER_IMAGE}
+              docker push ${DOCKER_IMAGE_LATEST}
+            """
+               }
             }
         }
     }
