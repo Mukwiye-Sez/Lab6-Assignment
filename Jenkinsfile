@@ -29,7 +29,7 @@ spec:
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-creds')
-        IMAGE_NAME = "mukkri5/lab6-app"
+        IMAGE_NAME = "mukkris/lab6-app"
     }
 
     stages {
