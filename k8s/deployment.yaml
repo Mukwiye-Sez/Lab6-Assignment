@@ -1,0 +1,22 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab6-app
+  labels:
+    app: lab6-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab6-app
+  template:
+    metadata:
+      labels:
+        app: lab6-app
+    spec:
+      containers:
+        - name: lab6-app
+          image: mukkris/lab6-app:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 5000
