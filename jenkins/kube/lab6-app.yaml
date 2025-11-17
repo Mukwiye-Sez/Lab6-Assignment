@@ -1,0 +1,31 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lab6-app
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: lab6-app
+  template:
+    metadata:
+      labels:
+        app: lab6-app
+    spec:
+      containers:
+        - name: lab6-app
+          image: mukkris/lab6-app:2
+          ports:
+            - containerPort: 5000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lab6-app-service
+spec:
+  selector:
+    app: lab6-app
+  type: ClusterIP
+  ports:
+    - port: 5000
+      targetPort: 5000
