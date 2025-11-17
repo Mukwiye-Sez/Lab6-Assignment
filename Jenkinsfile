@@ -47,7 +47,7 @@ spec:
     }
 
     environment {
-        DOCKER_IMAGE = "mukkri5/lab6-app:${BUILD_NUMBER}"
+        DOCKER_IMAGE = "mukkris/lab6-app:${BUILD_NUMBER}"
     }
 
     stages {
