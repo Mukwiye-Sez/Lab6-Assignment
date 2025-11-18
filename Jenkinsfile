@@ -119,17 +119,22 @@ spec:
         }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                container('docker') {
-                    withEnv(["KUBECONFIG=/tmp/kubeconfig"]) {
-                        writeFile file: '/tmp/kubeconfig', text: KUBE_CONFIG
-                        sh """
-                          kubectl apply -f kube/lab6-app.yaml
-                          kubectl rollout status deployment/lab6-app
-                        """
-                    }
-                }
-            }
+    steps {
+        container('docker') {
+            sh '''
+              # Use the kubeconfig file injected by Jenkins
+              export KUBECONFIG="$KUBE_CONFIG"
+
+              # Apply the deployment and service manifests
+              kubectl apply -f kube/lab6-app.yaml
+
+              # Wait for the rolling update to finish
+              kubectl rollout status deployment/lab6-app
+
+              # Basic observability
+              kubectl get pods
+              kubectl get svc
+            '''
         }
     }
 }
