@@ -18,4 +18,5 @@ def test_index_status_code():
 def test_index_response_body():
     client = app.test_client()
     response = client.get("/")
-    assert b"Hello from Lab 6 CI/CD pipeline!" in response.data
+    assert b"Hello from Lab 6 pipeline v2 - rolling update!" in response.data
+
