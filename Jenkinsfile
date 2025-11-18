@@ -22,6 +22,15 @@ spec:
         - name: workspace-volume
           mountPath: /home/jenkins/agent
           readOnly: false
+    - name: kubectl
+      image: bitnami/kubectl:1.30
+      command:
+        - cat
+      tty: true
+      volumeMounts:
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
+          readOnly: false
     - name: jnlp
       image: jenkins/inbound-agent:3345.v03dee9b_f88fc-1
       env:
@@ -49,8 +58,6 @@ spec:
     environment {
         DOCKER_IMAGE        = "mukkris/lab6-app:${BUILD_NUMBER}"
         DOCKER_IMAGE_LATEST = "mukkris/lab6-app:latest"
-        // kubeconfig stored as Secret text in Jenkins
-        KUBECONFIG_CONTENT  = credentials('kubeconfig')
     }
 
     stages {
@@ -121,22 +128,25 @@ spec:
 
         stage('Deploy to Kubernetes') {
             steps {
-                container('docker') {
-                    sh '''
-                      # Write kubeconfig content from env variable into a file
-                      echo "$KUBECONFIG_CONTENT" > kubeconfig
+                container('kubectl') {
+                    withCredentials([string(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_CONTENT')]) {
+                        sh '''
+                          # Write kubeconfig content to a file in the workspace
+                          echo "$KUBECONFIG_CONTENT" > kubeconfig
+                          export KUBECONFIG="$PWD/kubeconfig"
 
-                      # Point kubectl to that file
-                      export KUBECONFIG="$PWD/kubeconfig"
+                          # Check kubectl works
+                          kubectl version --client
 
-                      # Apply manifests and wait for rollout
-                      kubectl apply -f kube/lab6-app.yaml
-                      kubectl rollout status deployment/lab6-app
+                          # Apply manifests and wait for rollout
+                          kubectl apply -f kube/lab6-app.yaml
+                          kubectl rollout status deployment/lab6-app
 
-                      # Observability
-                      kubectl get pods
-                      kubectl get svc
-                    '''
+                          # Basic observability
+                          kubectl get pods
+                          kubectl get svc
+                        '''
+                    }
                 }
             }
         }
