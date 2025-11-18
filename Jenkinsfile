@@ -13,8 +13,7 @@ spec:
   containers:
     - name: docker
       image: docker:27.1.2-cli
-      command:
-        - cat
+      command: ["cat"]
       tty: true
       volumeMounts:
         - name: docker-sock
@@ -22,20 +21,8 @@ spec:
         - name: workspace-volume
           mountPath: /home/jenkins/agent
           readOnly: false
-    - name: kubectl
-      image: bitnami/kubectl:1.30
-      command:
-        - cat
-      tty: true
-      volumeMounts:
-        - name: workspace-volume
-          mountPath: /home/jenkins/agent
-          readOnly: false
     - name: jnlp
       image: jenkins/inbound-agent:3345.v03dee9b_f88fc-1
-      env:
-        - name: JENKINS_URL
-          value: "http://jenkins.jenkins.svc.cluster.local:8080/"
       resources:
         requests:
           memory: "256Mi"
@@ -122,31 +109,6 @@ spec:
                       docker push ${DOCKER_IMAGE}
                       docker push ${DOCKER_IMAGE_LATEST}
                     """
-                }
-            }
-        }
-
-        stage('Deploy to Kubernetes') {
-            steps {
-                container('kubectl') {
-                    withCredentials([string(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_CONTENT')]) {
-                        sh '''
-                          # Write kubeconfig content to a file in the workspace
-                          echo "$KUBECONFIG_CONTENT" > kubeconfig
-                          export KUBECONFIG="$PWD/kubeconfig"
-
-                          # Check kubectl works
-                          kubectl version --client
-
-                          # Apply manifests and wait for rollout
-                          kubectl apply -f kube/lab6-app.yaml
-                          kubectl rollout status deployment/lab6-app
-
-                          # Basic observability
-                          kubectl get pods
-                          kubectl get svc
-                        '''
-                    }
                 }
             }
         }
