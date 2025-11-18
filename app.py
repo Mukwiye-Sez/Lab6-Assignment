@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 @app.route("/")
 def index():
-    return "Hello from Lab 6 CI/CD pipeline!"
+    return "Hello from Lab 6 pipeline v2 - rolling update!"
 
 
 if __name__ == "__main__":
