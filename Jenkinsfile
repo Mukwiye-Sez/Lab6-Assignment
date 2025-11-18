@@ -13,19 +13,9 @@ spec:
   containers:
     - name: docker
       image: docker:27.1.2-cli
-      command: ["cat"]
-      tty: true
-
-    - name: kubectl
-      image: bitnami/kubectl:latest
       command:
         - cat
       tty: true
-      volumeMounts:
-        - name: workspace-volume
-          mountPath: /home/jenkins/agent
-          readOnly: false
-
       volumeMounts:
         - name: docker-sock
           mountPath: /var/run/docker.sock
@@ -52,16 +42,18 @@ spec:
         type: Socket
     - name: workspace-volume
       emptyDir: {}
-            """
+"""
         }
     }
 
     environment {
-        DOCKER_IMAGE = "mukkris/lab6-app:${BUILD_NUMBER}"
+        DOCKER_IMAGE        = "mukkris/lab6-app:${BUILD_NUMBER}"
         DOCKER_IMAGE_LATEST = "mukkris/lab6-app:latest"
+        KUBE_CONFIG         = credentials('kubeconfig')
     }
 
     stages {
+
         stage('Checkout') {
             steps {
                 git branch: 'main',
@@ -72,17 +64,19 @@ spec:
         stage('Build Docker Image') {
             steps {
                 container('docker') {
-            sh """
-              docker build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .
-            """
-               }
+                    sh """
+                      docker build -t ${DOCKER_IMAGE} -t ${DOCKER_IMAGE_LATEST} .
+                    """
+                }
             }
         }
 
         stage('Test') {
             steps {
                 container('docker') {
-                    sh "docker run --rm ${DOCKER_IMAGE} pytest -q"
+                    sh """
+                      docker run --rm ${DOCKER_IMAGE} pytest -q
+                    """
                 }
             }
         }
@@ -90,7 +84,9 @@ spec:
         stage('Static Analysis') {
             steps {
                 container('docker') {
-                    sh "docker run --rm ${DOCKER_IMAGE} flake8 app.py"
+                    sh """
+                      docker run --rm ${DOCKER_IMAGE} flake8 app.py
+                    """
                 }
             }
         }
@@ -103,35 +99,37 @@ spec:
                         usernameVariable: 'DOCKERHUB_USERNAME',
                         passwordVariable: 'DOCKERHUB_PASSWORD'
                     )]) {
-                        sh '''
-                          echo "$DOCKERHUB_PASSWORD" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-                        '''
+                        sh """
+                          echo "${DOCKERHUB_PASSWORD}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
+                        """
                     }
                 }
             }
         }
 
         stage('Push Image') {
-    steps {
-        container('docker') {
-            sh """
-              docker push ${DOCKER_IMAGE}
-              docker push ${DOCKER_IMAGE_LATEST}
-            """
+            steps {
+                container('docker') {
+                    sh """
+                      docker push ${DOCKER_IMAGE}
+                      docker push ${DOCKER_IMAGE_LATEST}
+                    """
+                }
+            }
         }
-    }
-}
 
-stage('Deploy to Kubernetes') {
-    steps {
-        container('docker') {
-            withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
-                sh '''
-                  export KUBECONFIG=$KUBECONFIG_FILE
-                  kubectl apply -f lab6-app.yaml
-                '''
+        stage('Deploy to Kubernetes') {
+            steps {
+                container('docker') {
+                    withEnv(["KUBECONFIG=/tmp/kubeconfig"]) {
+                        writeFile file: '/tmp/kubeconfig', text: KUBE_CONFIG
+                        sh """
+                          kubectl apply -f kube/lab6-app.yaml
+                          kubectl rollout status deployment/lab6-app
+                        """
+                    }
+                }
             }
         }
     }
 }
-
