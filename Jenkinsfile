@@ -49,7 +49,6 @@ spec:
     environment {
         DOCKER_IMAGE        = "mukkris/lab6-app:${BUILD_NUMBER}"
         DOCKER_IMAGE_LATEST = "mukkris/lab6-app:latest"
-        KUBE_CONFIG         = credentials('kubeconfig')
     }
 
     stages {
@@ -119,22 +118,19 @@ spec:
         }
 
         stage('Deploy to Kubernetes') {
-    steps {
-        container('docker') {
-            sh '''
-              # Use the kubeconfig file injected by Jenkins
-              export KUBECONFIG="$KUBE_CONFIG"
-
-              # Apply the deployment and service manifests
-              kubectl apply -f kube/lab6-app.yaml
-
-              # Wait for the rolling update to finish
-              kubectl rollout status deployment/lab6-app
-
-              # Basic observability
-              kubectl get pods
-              kubectl get svc
-            '''
+            steps {
+                container('docker') {
+                    // kubeconfig stored as a Secret file credential with ID 'kubeconfig'
+                    withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG')]) {
+                        sh """
+                          kubectl apply -f kube/lab6-app.yaml
+                          kubectl rollout status deployment/lab6-app
+                          kubectl get pods
+                          kubectl get svc
+                        """
+                    }
+                }
+            }
         }
     }
 }
