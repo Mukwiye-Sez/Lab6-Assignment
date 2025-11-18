@@ -15,6 +15,17 @@ spec:
       image: docker:27.1.2-cli
       command: ["cat"]
       tty: true
+
+    - name: kubectl
+      image: bitnami/kubectl:latest
+      command:
+        - cat
+      tty: true
+      volumeMounts:
+        - name: workspace-volume
+          mountPath: /home/jenkins/agent
+          readOnly: false
+
       volumeMounts:
         - name: docker-sock
           mountPath: /var/run/docker.sock
@@ -101,14 +112,26 @@ spec:
         }
 
         stage('Push Image') {
-            steps {
-                container('docker') {
+    steps {
+        container('docker') {
             sh """
               docker push ${DOCKER_IMAGE}
               docker push ${DOCKER_IMAGE_LATEST}
             """
-               }
+        }
+    }
+}
+
+stage('Deploy to Kubernetes') {
+    steps {
+        container('docker') {
+            withCredentials([file(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_FILE')]) {
+                sh '''
+                  export KUBECONFIG=$KUBECONFIG_FILE
+                  kubectl apply -f lab6-app.yaml
+                '''
             }
         }
     }
 }
+
